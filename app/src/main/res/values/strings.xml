@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Super Cidadão</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="jogar">Jogar</string>
+    <string name="id_key_idcadastro_novo">idCadastro</string>
+    <string name="id_key_preferencias">id_key_preferencias</string>
+    <string name="erro_geral">não foi possível recuperar a informação. :(</string>
+    <string name="erro_criar_partida">Não foi possível criar uma partida</string>
+    <string name="venceu">Você ganhou!</string>
+    <string name="perdeu">Você perdeu! :(</string>
+</resources>
