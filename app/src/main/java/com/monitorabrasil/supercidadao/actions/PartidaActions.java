@@ -1,10 +1,13 @@
 package com.monitorabrasil.supercidadao.actions;
 
 import android.content.Context;
+import android.os.Handler;
+import android.util.Log;
 
 import com.monitorabrasil.supercidadao.POJO.PartidaEvent;
 import com.monitorabrasil.supercidadao.R;
 import com.monitorabrasil.supercidadao.application.AppController;
+import com.monitorabrasil.supercidadao.views.MainActivity;
 import com.parse.FunctionCallback;
 import com.parse.GetCallback;
 import com.parse.ParseCloud;
@@ -27,6 +30,7 @@ public class PartidaActions {
     public static final String PARTIDA_BUSCA = "partida_busca";
     public static final java.lang.String PARTIDA_INICIAR = "partida_iniciar";
     public static final String PARTIDA_AGUARDANDO_J2 = "partida_aguardando_j2";
+    public static final String PARTIDA_JOGADA = "partida_jogada";
     private static PartidaActions instance;
 
     PartidaActions(){}
@@ -39,25 +43,9 @@ public class PartidaActions {
         return instance;
     }
 
-    public void getPartida(){
-        ParseQuery<ParseObject> query = ParseQuery.getQuery("ComentarioPolitico");
-
-        query.addDescendingOrder("createdAt");
-        query.getFirstInBackground(new GetCallback<ParseObject>() {
-            @Override
-            public void done(ParseObject object, ParseException e) {
-                if (e == null) {
-                    EventBus.getDefault().post(new PartidaEvent(PARTIDA_BUSCA, object, null));
-                } else {
-                    PartidaEvent ce = new PartidaEvent(PARTIDA_BUSCA);
-                    ce.setErro(AppController.getInstance().getString(R.string.erro_geral));
-                    EventBus.getDefault().post(ce);
-                }
-            }
-        });
-    }
-
-
+    /**
+     * Inicia a partida ou cria
+     */
     public void iniciaPartida() {
         //buscar partida criada
 
@@ -136,5 +124,93 @@ public class PartidaActions {
                 }
             }
         });
+    }
+
+    /**
+     * Salva a jogada executada
+     * @param isJogador1 se eh o jogador 1
+     * @param carta1 id da carta do jogador 1
+     * @param carta2 id da carta do jogador 2
+     * @param partida objeto partida
+     * @param categoria id da categoria escolhida
+     */
+    public void enviaJogada(boolean isJogador1, Object carta1, Object carta2, ParseObject partida, int categoria) {
+        ParseObject jogada = new ParseObject("Jogada");
+        jogada.put("j1",isJogador1);
+        jogada.put("carta1",carta1.toString());
+        jogada.put("carta2",carta2.toString());
+        jogada.put("partida",partida);
+        jogada.put("categoria",categoria);
+        jogada.put("retornou",false);
+        jogada.saveInBackground();
+    }
+
+    /**
+     * Atualiza a informacao se a partida iniciou
+     * @param partida objeto partida
+     */
+    public void verificaInicio(ParseObject partida) {
+        Log.d(MainActivity.TAG,"Verificando inicio da partida");
+        partida.fetchInBackground(new GetCallback<ParseObject>() {
+            @Override
+            public void done(ParseObject object, ParseException e) {
+                if(object.getList("cartas1")!= null){
+                    EventBus.getDefault().post(new PartidaEvent(PARTIDA_INICIAR, object, null));
+                }else{
+                   buscaInformacaoPartida(object);
+                }
+            }
+        });
+    }
+
+    /**
+     * handler para buscar de 3 em 3 segundos a informacao se a partida iniciou
+     * @param object objeto partida
+     */
+    public void buscaInformacaoPartida(final ParseObject object) {
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                verificaInicio(object);
+            }
+        }, 3000);
+    }
+
+    /**
+     * Verifica se o adversario jogou
+     * @param partida partida em andamento
+     */
+    public void verificaJogada(final ParseObject partida) {
+        Log.d(MainActivity.TAG,"Verificando inicio da partida");
+        ParseQuery<ParseObject> query = ParseQuery.getQuery("Jogada");
+        query.whereEqualTo("partida",partida);
+        query.whereEqualTo("retornou",false);
+        query.whereEqualTo("j1",false);
+        query.addAscendingOrder("createdAt");
+        query.getFirstInBackground(new GetCallback<ParseObject>() {
+            @Override
+            public void done(ParseObject object, ParseException e) {
+                if(object != null) {
+                    object.put("retornou", true);
+                    object.saveInBackground();
+                    PartidaEvent event = new PartidaEvent(PARTIDA_JOGADA);
+                    event.setJogada(object);
+                    EventBus.getDefault().post(event);
+                }else{
+                    buscaInformacaoJogada(partida);
+                }
+            }
+        });
+    }
+
+    private void buscaInformacaoJogada(final ParseObject partida) {
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                verificaJogada(partida);
+            }
+        }, 3000);
     }
 }

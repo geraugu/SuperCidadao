@@ -9,6 +9,7 @@ public class PartidaEvent extends Event {
 
 
     private ParseObject partida;
+    private ParseObject jogada;
 
     public PartidaEvent(String action, ParseObject object, String erro) {
         this.action = action;
@@ -26,5 +27,13 @@ public class PartidaEvent extends Event {
 
     public void setPartida(ParseObject partida) {
         this.partida = partida;
+    }
+
+    public ParseObject getJogada() {
+        return jogada;
+    }
+
+    public void setJogada(ParseObject jogada) {
+        this.jogada = jogada;
     }
 }
