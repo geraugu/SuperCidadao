@@ -147,21 +147,39 @@ public class MainActivity extends Activity
                     if (resultado.getVisibility() == View.VISIBLE) {
                         //verifica se tem carta ainda
                         if (cartas1.size() > 0 && cartas2.size() > 0) {
-                            ParseObject p = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
-                            p.fetchInBackground(new GetCallback<ParseObject>() {
-                                @Override
-                                public void done(ParseObject object, ParseException e) {
-                                    montaCarta(object, peso1.get(0).toString());
-                                }
-                            });
+                            if(isJogador1) {
+                                ParseObject p = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
+                                p.fetchInBackground(new GetCallback<ParseObject>() {
+                                    @Override
+                                    public void done(ParseObject object, ParseException e) {
+                                        montaCarta(object, peso1.get(0).toString());
+                                    }
+                                });
 
-                            ParseObject p2 = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
-                            p2.fetchInBackground(new GetCallback<ParseObject>() {
-                                @Override
-                                public void done(ParseObject object, ParseException e) {
-                                    adversarioPolitico = object;
-                                }
-                            });
+                                ParseObject p2 = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
+                                p2.fetchInBackground(new GetCallback<ParseObject>() {
+                                    @Override
+                                    public void done(ParseObject object, ParseException e) {
+                                        adversarioPolitico = object;
+                                    }
+                                });
+                            }else{
+                                ParseObject p = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
+                                p.fetchInBackground(new GetCallback<ParseObject>() {
+                                    @Override
+                                    public void done(ParseObject object, ParseException e) {
+                                        montaCarta(object, peso2.get(0).toString());
+                                    }
+                                });
+
+                                ParseObject p2 = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
+                                p2.fetchInBackground(new GetCallback<ParseObject>() {
+                                    @Override
+                                    public void done(ParseObject object, ParseException e) {
+                                        adversarioPolitico = object;
+                                    }
+                                });
+                            }
                             mostrarCarta();
                         } else {
                             //verificar quem ganhou
@@ -297,29 +315,49 @@ public class MainActivity extends Activity
         cardEscolherCategoria.setVisibility(View.INVISIBLE);
         //analisar e mostrar se ganhou ou perdeu
         if(ganhei()){
+            resultado.setText(getResources().getString(R.string.venceu));
+            if(isJogador1) {
+                cartas1.add(cartas2.get(0));
+                peso1.add(peso2.get(0));
+                mudaCartas();
+                cartas2.remove(0);
+                peso2.remove(0);
+            }else{
+                cartas2.add(cartas1.get(0));
+                peso2.add(peso1.get(0));
+                mudaCartas();
+                cartas1.remove(0);
+                peso1.remove(0);
+            }
             if(!isMyTurn){
                 atualizaCartas();
             }
-            isMyTurn =true;
-            resultado.setText(getResources().getString(R.string.venceu));
-            cartas1.add(cartas2.get(0));
-            peso1.add(peso2.get(0));
-            mudaCartas(1);
-            cartas2.remove(0);
-            peso2.remove(0);
             // TODO: 24/03/2016 mostra a proxima carta
-
-            txtStatus.setText("Aguardando sua jogada...");
+            isMyTurn =true;
+            txtStatus.setText("Sua vez...");
 
         }else{
-            isMyTurn=false;
+
+
             resultado.setText(getResources().getString(R.string.perdeu));
-            cartas2.add(cartas1.get(0));
-            peso2.add(peso1.get(0));
-            mudaCartas(2);
-            cartas1.remove(0);
-            peso1.remove(0);
+            if(isJogador1) {
+                cartas2.add(cartas1.get(0));
+                peso2.add(peso1.get(0));
+                mudaCartas();
+                cartas1.remove(0);
+                peso1.remove(0);
+            }else{
+                cartas1.add(cartas2.get(0));
+                peso1.add(peso2.get(0));
+                mudaCartas();
+                cartas2.remove(0);
+                peso2.remove(0);
+            }
+            if(!isMyTurn){
+                atualizaCartas();
+            }
             partidaActions.verificaJogada(partida,isJogador1);
+            isMyTurn=false;
             txtStatus.setText("Aguardando jogada do adversário...");
 
             final Handler handler = new Handler();
@@ -378,7 +416,7 @@ public class MainActivity extends Activity
     }
 
     /**
-     * Analiza quem ganhou a jodada
+     * Analisa quem ganhou a jodada
      * @return se ganhou ou nao
      */
     private boolean ganhei() {
@@ -399,7 +437,7 @@ public class MainActivity extends Activity
                     meuPeso.get(0).toString(),
                     adversarioPolitico.getString("nome")
             ));
-            if(peso1.get(0).toString().substring(1).equals("1")){
+            if(meuPeso.get(0).toString().substring(1).equals("1")){
                 return true;
             }else{
                 return false;
@@ -412,7 +450,7 @@ public class MainActivity extends Activity
                     adversarioPeso.get(0).toString(),
                     meuPolitico.getString("nome")
             ));
-            if(peso2.get(0).toString().substring(1).equals("1")){
+            if(meuPeso.get(0).toString().substring(1).equals("1")){
                 return true;
             }else{
                 return false;
@@ -435,7 +473,7 @@ public class MainActivity extends Activity
                 }
                 break;
             case 1://gastos total
-                if(adversarioPolitico.getNumber("gastos").doubleValue() > meuPolitico.getNumber("faltas").doubleValue()){
+                if(adversarioPolitico.getNumber("gastos").doubleValue() > meuPolitico.getNumber("gastos").doubleValue()){
                     retorno = true;
                 }
                 break;
@@ -529,10 +567,10 @@ public class MainActivity extends Activity
 
     }
 
-    private void mudaCartas( int peso) {
+    private void mudaCartas() {
         //passar a carta que ganhou para o fim do baralho
 
-        if(peso == 1){
+        if(isJogador1){
             Object temp = cartas1.get(0);
             cartas1.remove(0);
             cartas1.add(temp);
