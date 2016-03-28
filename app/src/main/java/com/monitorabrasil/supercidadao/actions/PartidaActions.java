@@ -132,8 +132,9 @@ public class PartidaActions {
      * @param carta2 id da carta do jogador 2
      * @param partida objeto partida
      * @param categoria id da categoria escolhida
+     * @param numJogada numero da jogada
      */
-    public void enviaJogada(boolean isJogador1, Object carta1, Object carta2, ParseObject partida, int categoria) {
+    public void enviaJogada(boolean isJogador1, Object carta1, Object carta2, ParseObject partida, int categoria,int numJogada) {
         ParseObject jogada = new ParseObject("Jogada");
         jogada.put("j1",isJogador1);
         jogada.put("carta1",carta1.toString());
@@ -141,6 +142,7 @@ public class PartidaActions {
         jogada.put("partida",partida);
         jogada.put("categoria",categoria);
         jogada.put("retornou",false);
+        jogada.put("numJogada",numJogada);
         jogada.saveInBackground();
     }
 

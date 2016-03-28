@@ -147,50 +147,9 @@ public class MainActivity extends Activity
                     if (resultado.getVisibility() == View.VISIBLE) {
                         //verifica se tem carta ainda
                         if (cartas1.size() > 0 && cartas2.size() > 0) {
-                            if(isJogador1) {
-                                ParseObject p = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
-                                p.fetchInBackground(new GetCallback<ParseObject>() {
-                                    @Override
-                                    public void done(ParseObject object, ParseException e) {
-                                        montaCarta(object, peso1.get(0).toString());
-                                    }
-                                });
-
-                                ParseObject p2 = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
-                                p2.fetchInBackground(new GetCallback<ParseObject>() {
-                                    @Override
-                                    public void done(ParseObject object, ParseException e) {
-                                        adversarioPolitico = object;
-                                    }
-                                });
-                            }else{
-                                ParseObject p = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
-                                p.fetchInBackground(new GetCallback<ParseObject>() {
-                                    @Override
-                                    public void done(ParseObject object, ParseException e) {
-                                        montaCarta(object, peso2.get(0).toString());
-                                    }
-                                });
-
-                                ParseObject p2 = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
-                                p2.fetchInBackground(new GetCallback<ParseObject>() {
-                                    @Override
-                                    public void done(ParseObject object, ParseException e) {
-                                        adversarioPolitico = object;
-                                    }
-                                });
-                            }
                             mostrarCarta();
                         } else {
-                            //verificar quem ganhou
-                            if (cartas1.size() == 0) {
-                                //jogador 2 ganhou
-
-                            } else {
-                                //jogador 1 ganhou
-
-                            }
-                            txtStatus.setText("Fim de jogo");
+                            fimDePartida();
                         }
                     }
                 }else{
@@ -215,10 +174,7 @@ public class MainActivity extends Activity
             public void onClick(View v) {
                 txtStatus.setText("Verificando quem ganhou...");
                 verificaJogada();
-
                 atualizaCartas();
-
-
             }
         });
 
@@ -229,14 +185,25 @@ public class MainActivity extends Activity
 
     }
 
-    private void atualizaCartas() {
-        //atualiza numero de cartas
-        txtcartas1.setText(String.valueOf(cartas1.size()));
-        txtcartas2.setText(String.valueOf(cartas2.size()));
+    private void fimDePartida() {
+        //verificar quem ganhou
+        if (cartas1.size() == 0) {
+            //jogador 2 ganhou
+
+        } else {
+            //jogador 1 ganhou
+
+        }
+        txtStatus.setText("Fim de jogo");
+    }
+
+    private void mostraResulatdo(){
         cardResultado1.setVisibility(View.VISIBLE);
         cardResultado2.setVisibility(View.VISIBLE);
         resultado.setVisibility(View.VISIBLE);
+    }
 
+    private void atualizaCartas() {
         //atualiza a partida
         partida.put("cartas1",cartas1);
         partida.put("cartas2",cartas2);
@@ -266,13 +233,11 @@ public class MainActivity extends Activity
                     Snackbar.make(j1, "Partida iniciada", Snackbar.LENGTH_LONG)
                             .show();
                     // verificar se sou o jogador 1
-                    isJogador1=false;
                     numJogadas=0;
                     if(partida.getParseUser("j1").equals(ParseUser.getCurrentUser())){
-                        isJogador1=true;
                         isMyTurn=true;
                     }else{
-                        //verificar se houve jogada
+                        //verificar se houve jogada - jogador 2
                         partidaActions.verificaJogada(partida,isJogador1);
                         txtStatus.setText("Aguardando jogada do adversário...");
                     }
@@ -303,11 +268,10 @@ public class MainActivity extends Activity
      * verifica quem ganhou
      */
     private void verificaJogada() {
-        numJogadas++;
-
         if(isMyTurn) {
+            numJogadas++;
             //enviar a jogada para o servidor
-            partidaActions.enviaJogada(isJogador1, cartas1.get(0), cartas2.get(0), partida, categoriaSelecionada);
+            partidaActions.enviaJogada(isJogador1, cartas1.get(0), cartas2.get(0), partida, categoriaSelecionada,numJogadas);
         }else{
             //busca a jogada do adversario
             atualizaJogadores();
@@ -316,46 +280,24 @@ public class MainActivity extends Activity
         //analisar e mostrar se ganhou ou perdeu
         if(ganhei()){
             resultado.setText(getResources().getString(R.string.venceu));
-            if(isJogador1) {
-                cartas1.add(cartas2.get(0));
-                peso1.add(peso2.get(0));
-                mudaCartas();
-                cartas2.remove(0);
-                peso2.remove(0);
-            }else{
-                cartas2.add(cartas1.get(0));
-                peso2.add(peso1.get(0));
-                mudaCartas();
-                cartas1.remove(0);
-                peso1.remove(0);
-            }
-            if(!isMyTurn){
-                atualizaCartas();
-            }
-            // TODO: 24/03/2016 mostra a proxima carta
+            mudaCartas(true);//movimenta as cartas
+            //atualiza o numero de cartas
+            atualizaPlacar();
             isMyTurn =true;
             txtStatus.setText("Sua vez...");
-
+            final Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    mostrarCarta();
+                }
+            }, 5000);
         }else{
-
-
             resultado.setText(getResources().getString(R.string.perdeu));
-            if(isJogador1) {
-                cartas2.add(cartas1.get(0));
-                peso2.add(peso1.get(0));
-                mudaCartas();
-                cartas1.remove(0);
-                peso1.remove(0);
-            }else{
-                cartas1.add(cartas2.get(0));
-                peso1.add(peso2.get(0));
-                mudaCartas();
-                cartas2.remove(0);
-                peso2.remove(0);
-            }
-            if(!isMyTurn){
-                atualizaCartas();
-            }
+            mudaCartas(false);
+            //atualiza o numero de cartas
+            atualizaPlacar();
+
             partidaActions.verificaJogada(partida,isJogador1);
             isMyTurn=false;
             txtStatus.setText("Aguardando jogada do adversário...");
@@ -368,7 +310,21 @@ public class MainActivity extends Activity
                 }
             }, 5000);
         }
+        if(!isMyTurn){
+            atualizaCartas();
+        }
+        mostraResulatdo();
+        atualizaJogadores();
+    }
 
+    private void atualizaPlacar() {
+        if(isJogador1) {
+            txtcartas1.setText(String.valueOf(cartas1.size()));
+            txtcartas2.setText(String.valueOf(cartas2.size()));
+        }else{
+            txtcartas1.setText(String.valueOf(cartas2.size()));
+            txtcartas2.setText(String.valueOf(cartas1.size()));
+        }
     }
 
     private void atualizaJogadores() {
@@ -377,15 +333,8 @@ public class MainActivity extends Activity
                 ParseObject p = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
                 p.fetch();
                 meuPolitico = p;
-//                p.fetchInBackground(new GetCallback<ParseObject>() {
-//                    @Override
-//                    public void done(ParseObject object, ParseException e) {
-//                        meuPolitico = object;
-//                    }
-//                });
 
                 ParseObject p2 = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
-
                 p2.fetch();
                 adversarioPolitico = p2;
 
@@ -393,22 +342,10 @@ public class MainActivity extends Activity
                 ParseObject p = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
                 p.fetch();
                 meuPolitico=p;
-//                p.fetchInBackground(new GetCallback<ParseObject>() {
-//                    @Override
-//                    public void done(ParseObject object, ParseException e) {
-//                        meuPolitico = object;
-//                    }
-//                });
 
                 ParseObject p2 = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
                 p2.fetch();
                 adversarioPolitico = p2;
-//                p2.fetchInBackground(new GetCallback<ParseObject>() {
-//                    @Override
-//                    public void done(ParseObject object, ParseException e) {
-//                        adversarioPolitico = object;
-//                    }
-//                });
             }
         } catch (ParseException e) {
             e.printStackTrace();
@@ -450,10 +387,10 @@ public class MainActivity extends Activity
                     adversarioPeso.get(0).toString(),
                     meuPolitico.getString("nome")
             ));
-            if(meuPeso.get(0).toString().substring(1).equals("1")){
-                return true;
-            }else{
+            if(adversarioPeso.get(0).toString().substring(1).equals("1")){
                 return false;
+            }else{
+                return true;
             }
         }
 
@@ -496,7 +433,12 @@ public class MainActivity extends Activity
     private void atualizaView() {
         btnJogar.setVisibility(View.INVISIBLE);
         //atualiza nome dos jogadores
-        ParseUser jogador1 = partida.getParseUser("j1");
+        ParseUser jogador1;
+        if(isJogador1)
+            jogador1 = partida.getParseUser("j1");
+        else
+            jogador1 = partida.getParseUser("j2");
+
         jogador1.fetchIfNeededInBackground(new GetCallback<ParseObject>() {
             @Override
             public void done(ParseObject object, ParseException e) {
@@ -505,7 +447,11 @@ public class MainActivity extends Activity
         });
 
 
-        ParseUser jogador2 = partida.getParseUser("j2");
+        ParseUser jogador2;
+        if(isJogador1)
+            jogador2 = partida.getParseUser("j2");
+        else
+            jogador2 = partida.getParseUser("j1");
         jogador2.fetchInBackground(new GetCallback<ParseObject>() {
             @Override
             public void done(ParseObject object, ParseException e) {
@@ -554,7 +500,6 @@ public class MainActivity extends Activity
             array_list_title[2]="Avaliação: 5";
         }else{
             Imagem.getFotoPolitico(politico,fotoPolitico);
-            cardEscolherCategoria.setVisibility(View.VISIBLE);
             array_list_title[0]=String.format(Locale.getDefault(),"Faltas: %d",politico.getNumber("faltas").intValue());
             assert politico.getNumber("gastos") != null;
             array_list_title[1]=String.format(Locale.getDefault(),"Gastos Total: R$ %.2f",politico.getNumber("gastos").floatValue());
@@ -564,29 +509,43 @@ public class MainActivity extends Activity
                 new ArrayAdapter<String>(this,android.R.layout.simple_list_item_single_choice, array_list_title);
         listViewCategoria.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         listViewCategoria.setAdapter(arrayAdapter);
-
+        cardEscolherCategoria.setVisibility(View.VISIBLE);
     }
 
-    private void mudaCartas() {
+    private void mudaCartas(boolean ganhou) {
         //passar a carta que ganhou para o fim do baralho
+        if ((ganhou && isJogador1) || (!ganhou && !isJogador1)) {
+            //coloca a carta que ganhou do jogador 2 em ultimo
+            cartas1.add(cartas2.get(0));
+            peso1.add(peso2.get(0));
 
-        if(isJogador1){
+            //coloca a carta vencedora em ultimo
             Object temp = cartas1.get(0);
-            cartas1.remove(0);
+            cartas1.remove(0); //retira da primeira posicao
             cartas1.add(temp);
+            //a mesma coisa para o peso
             temp = peso1.get(0);
             peso1.remove(0);
             peso1.add(temp);
-        }else{
+            //remove a carta e peso do jogador 2
+            cartas2.remove(0);
+            peso2.remove(0);
+        } else {//para os casos se ganhei e sou jogador 2 ou se perdi e sou jogador 1
+            //coloca a carta que ganhou do jogador 1 em ultimo
+            cartas2.add(cartas1.get(0));
+            peso2.add(peso1.get(0));
+            //coloca a carta vencedora em ultimo
             Object temp = cartas2.get(0);
             cartas2.remove(0);
             cartas2.add(temp);
             temp = peso2.get(0);
             peso2.remove(0);
             peso2.add(temp);
+            //remove a carta e peso do jogador 2
+            cartas1.remove(0);
+            peso1.remove(0);
         }
     }
-
 
 
 
