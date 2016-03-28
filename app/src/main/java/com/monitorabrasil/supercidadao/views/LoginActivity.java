@@ -3,22 +3,21 @@ package com.monitorabrasil.supercidadao.views;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
-
 import android.content.CursorLoader;
 import android.content.Loader;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
-
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -28,11 +27,22 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.monitorabrasil.supercidadao.R;
+import com.parse.LogInCallback;
+import com.parse.LogOutCallback;
+import com.parse.ParseAnonymousUtils;
+import com.parse.ParseException;
+import com.parse.ParseInstallation;
+import com.parse.ParseUser;
+import com.parse.SaveCallback;
+import com.parse.SignUpCallback;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.monitorabrasil.supercidadao.R;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
@@ -45,6 +55,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Id to identity READ_CONTACTS permission request.
      */
     private static final int REQUEST_READ_CONTACTS = 0;
+    private static final String ATUALIZAR_CADASTRO_ANONIMO = "atualizar_cadastro_anonimo";
+    private static final String LOGAR = "logar";
+    private static final String CADASTRAR = "cadastrar";
 
     /**
      * A dummy authentication store containing known user names and passwords.
@@ -53,24 +66,69 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final String[] DUMMY_CREDENTIALS = new String[]{
             "foo@example.com:hello", "bar@example.com:world"
     };
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
-    private UserLoginTask mAuthTask = null;
+
 
     // UI references.
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
+    private EditText mNome;
+    private TextInputLayout txtLayNome;
     private View mProgressView;
     private View mLoginFormView;
+    private Button mEmailSignInButton;
+    private Button btnlogout;
+    private String statusForm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         // Set up the login form.
+        statusForm = LOGAR;
+        //link para novo cadastro
+        final TextView linkCadastro = (TextView)findViewById(R.id.linkCadastro);
+        assert linkCadastro != null;
+        linkCadastro.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                txtLayNome.setVisibility(View.VISIBLE);
+                mEmailSignInButton.setText("Cadastrar");
+                mNome.requestFocus();
+                statusForm = CADASTRAR;
+            }
+        });
+
+        //link para cadastro anonimo
+        final TextView linkCadastroAnonimo = (TextView)findViewById(R.id.linkCadastroAnonimo);
+        assert linkCadastroAnonimo != null;
+        linkCadastroAnonimo.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showProgress(true);
+                ParseAnonymousUtils.logIn(new LogInCallback() {
+                    @Override
+                    public void done(ParseUser user, ParseException e) {
+                        if (e != null) {
+                            Log.d(MainActivity.TAG, "Anonymous login failed.");
+                        } else {
+                            Log.d(MainActivity.TAG, "Anonymous user logged in.");
+//                            user.set
+                            atualizaInstalacao(user);
+                            finish();
+                        }
+                    }
+                });
+            }
+        });
+
+
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
+
+        mNome = (EditText)findViewById(R.id.nome);
+        txtLayNome = (TextInputLayout)findViewById(R.id.txtLayNome);
+        assert txtLayNome != null;
+        txtLayNome.setVisibility(View.INVISIBLE);
 
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
@@ -84,7 +142,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
-        Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
+        mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -92,8 +150,52 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
         });
 
+        //botao logout
+        btnlogout = (Button) findViewById(R.id.btLogout);
+        btnlogout.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showProgress(true);
+                ParseUser.logOutInBackground(new LogOutCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        showProgress(false);
+                        txtLayNome.setVisibility(View.GONE);
+                        btnlogout.setVisibility(View.GONE);
+                        mEmailSignInButton.setText(getString(R.string.action_sign_in));
+                        mEmailView.setText("");
+                        mNome.setText("");
+                        linkCadastro.setVisibility(View.VISIBLE);
+                        linkCadastroAnonimo.setVisibility(View.VISIBLE);
+                        statusForm = LOGAR;
+                    }
+                });
+            }
+        });
+
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+        //verificar se esta cadastrado
+        if(ParseUser.getCurrentUser()!= null){
+            ParseUser user = ParseUser.getCurrentUser();
+            txtLayNome.setVisibility(View.VISIBLE);
+            mNome.setText(user.getString("nome"));
+            mPasswordView.setVisibility(View.VISIBLE);
+            linkCadastro.setVisibility(View.INVISIBLE);
+            linkCadastroAnonimo.setVisibility(View.INVISIBLE);
+            mEmailSignInButton.setText("Atualizar Cadastro");
+            statusForm = ATUALIZAR_CADASTRO_ANONIMO;
+            assert  user.getEmail() != null;
+            mEmailView.setText(user.getEmail());
+            btnlogout.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void atualizaInstalacao(ParseUser user) {
+        ParseInstallation installation =  ParseInstallation.getCurrentInstallation();
+        installation.put("user", user);
+        installation.saveInBackground();
     }
 
     private void populateAutoComplete() {
@@ -146,17 +248,17 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-        if (mAuthTask != null) {
-            return;
-        }
+
 
         // Reset errors.
         mEmailView.setError(null);
         mPasswordView.setError(null);
+        mNome.setError(null);
 
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
-        String password = mPasswordView.getText().toString();
+        final String password = mPasswordView.getText().toString();
+        final String nome = mNome.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
@@ -179,6 +281,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             cancel = true;
         }
 
+        //verifica se preecheu o nome
+        if(statusForm.equals(CADASTRAR) && TextUtils.isEmpty(nome)){
+            mNome.setError(getString(R.string.error_field_required));
+            focusView = mNome;
+            cancel=true;
+        }
         if (cancel) {
             // There was an error; don't attempt login and focus the first
             // form field with an error.
@@ -187,8 +295,89 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
-            mAuthTask.execute((Void) null);
+            if(statusForm.equals(LOGAR)) {
+                ParseUser.logInInBackground(email, password, new LogInCallback() {
+                    @Override
+                    public void done(ParseUser user, ParseException e) {
+                        if(e==null){
+                            atualizaInstalacao(user);
+                            finish();
+                        }else{
+                            showProgress(false);
+                            Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT)
+                                    .show();
+                            mPasswordView.setError(getString(R.string.error_incorrect_password));
+                            mPasswordView.requestFocus();
+                        }
+                    }
+                });
+
+            }else{
+                //cadastrar
+                ParseUser user = new ParseUser();
+                if(ParseUser.getCurrentUser()!= null) {
+                    user = ParseUser.getCurrentUser();
+                    user.setEmail(email);
+                    user.setUsername(email);
+                    user.put("nome",nome);
+                    if(!TextUtils.isEmpty(password))
+                        user.setPassword(password);
+                    user.saveInBackground(new SaveCallback() {
+                        @Override
+                        public void done(ParseException e) {
+                            showProgress(false);
+                            if(e==null){
+                                atualizaInstalacao(ParseUser.getCurrentUser());
+                                Toast.makeText(getApplicationContext(), getString(R.string.atualizado_sucesso), Toast.LENGTH_SHORT)
+                                        .show();
+                                finish();
+                            }else{
+                                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT)
+                                        .show();
+                            }
+                        }
+                    });
+                }else{
+                    user.setPassword(password);
+                    user.setUsername(email);
+                    user.put("nome",nome);
+                    user.setEmail(email);
+                    user.signUpInBackground(new SignUpCallback() {
+                        @Override
+                        public void done(ParseException e) {
+                            if(e == null){
+                                atualizaInstalacao(ParseUser.getCurrentUser());
+                                finish();
+                            }else{
+                                if(e.getCode() == 203) {//email ja cadastrado
+                                    Toast.makeText(getApplicationContext(), e.getMessage().toString(), Toast.LENGTH_SHORT)
+                                            .show();
+                                    //tentar fazer o login
+                                    showProgress(true);
+                                    ParseUser.logInInBackground(nome, password, new LogInCallback() {
+                                        @Override
+                                        public void done(ParseUser user, ParseException e) {
+                                            if(e==null){
+                                                atualizaInstalacao(user);
+                                                finish();
+                                            }else{
+                                                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT)
+                                                        .show();
+                                            }
+                                        }
+                                    });
+                                }
+                                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT)
+                                        .show();
+                                Log.e(MainActivity.TAG,e.getMessage());
+
+
+                            }
+                            showProgress(false);
+                        }
+                    });
+                }
+            }
         }
     }
 
@@ -292,61 +481,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         int IS_PRIMARY = 1;
     }
 
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
-    public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 
-        private final String mEmail;
-        private final String mPassword;
-
-        UserLoginTask(String email, String password) {
-            mEmail = email;
-            mPassword = password;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            // TODO: attempt authentication against a network service.
-
-            try {
-                // Simulate network access.
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            }
-
-            for (String credential : DUMMY_CREDENTIALS) {
-                String[] pieces = credential.split(":");
-                if (pieces[0].equals(mEmail)) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1].equals(mPassword);
-                }
-            }
-
-            // TODO: register the new account here.
-            return true;
-        }
-
-        @Override
-        protected void onPostExecute(final Boolean success) {
-            mAuthTask = null;
-            showProgress(false);
-
-            if (success) {
-                finish();
-            } else {
-                mPasswordView.setError(getString(R.string.error_incorrect_password));
-                mPasswordView.requestFocus();
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mAuthTask = null;
-            showProgress(false);
-        }
-    }
 }
 

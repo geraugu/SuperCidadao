@@ -51,8 +51,9 @@
             android:value="fb370c047719aaf76293ffecd977d8476584bbee" />
 
         <activity
-            android:name=".LoginActivity"
-            android:label="@string/title_activity_login"></activity>
+            android:name=".views.LoginActivity"
+            android:label="@string/title_activity_login"
+            android:theme="@style/Theme.AppCompat"></activity>
     </application>
 
 </manifest>

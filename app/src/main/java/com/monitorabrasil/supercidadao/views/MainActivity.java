@@ -1,6 +1,7 @@
 package com.monitorabrasil.supercidadao.views;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.NavigationView;
@@ -84,6 +85,9 @@ public class MainActivity extends Activity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(ParseUser.getCurrentUser()== null){
+            startActivity(new Intent(this,LoginActivity.class));
+        }
         // enable transitions
         getWindow().requestFeature(Window.FEATURE_CONTENT_TRANSITIONS);
         setContentView(R.layout.activity_main);
@@ -177,7 +181,7 @@ public class MainActivity extends Activity
             }
         });
 
-        //botao iniciar
+        //botao iniciar a partida
         btnJogar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -194,19 +198,8 @@ public class MainActivity extends Activity
                 txtStatus.setText("Verificando quem ganhou...");
                 verificaJogada();
 
-                //atualiza numero de cartas
-                txtcartas1.setText(String.valueOf(cartas1.size()));
-                txtcartas2.setText(String.valueOf(cartas2.size()));
-                cardResultado1.setVisibility(View.VISIBLE);
-                cardResultado2.setVisibility(View.VISIBLE);
-                resultado.setVisibility(View.VISIBLE);
+                atualizaCartas();
 
-                //atualiza a partida
-                partida.put("cartas1",cartas1);
-                partida.put("cartas2",cartas2);
-                partida.put("peso1",peso1);
-                partida.put("peso2",peso2);
-                partida.saveInBackground();
 
             }
         });
@@ -216,6 +209,22 @@ public class MainActivity extends Activity
         //cardview resultado1
         cardResultado1.setVisibility(View.INVISIBLE);
 
+    }
+
+    private void atualizaCartas() {
+        //atualiza numero de cartas
+        txtcartas1.setText(String.valueOf(cartas1.size()));
+        txtcartas2.setText(String.valueOf(cartas2.size()));
+        cardResultado1.setVisibility(View.VISIBLE);
+        cardResultado2.setVisibility(View.VISIBLE);
+        resultado.setVisibility(View.VISIBLE);
+
+        //atualiza a partida
+        partida.put("cartas1",cartas1);
+        partida.put("cartas2",cartas2);
+        partida.put("peso1",peso1);
+        partida.put("peso2",peso2);
+        partida.saveInBackground();
     }
 
     private void mostrarCarta() {
@@ -236,20 +245,20 @@ public class MainActivity extends Activity
             switch (event.getAction()) {
                 case PartidaActions.PARTIDA_INICIAR:
                     partida = event.getPartida();
-                    atualizaView();
                     Snackbar.make(j1, "Partida iniciada", Snackbar.LENGTH_LONG)
                             .show();
-                    //TODO: 24/03/2016  verificar se sou o jogador 1
-                    isJogador1=true;
-
+                    // verificar se sou o jogador 1
+                    isJogador1=false;
                     numJogadas=0;
-                    if(isJogador1){
+                    if(partida.getParseUser("j1").equals(ParseUser.getCurrentUser())){
+                        isJogador1=true;
                         isMyTurn=true;
                     }else{
                         //verificar se houve jogada
-                        partidaActions.verificaJogada(partida);
+                        partidaActions.verificaJogada(partida,isJogador1);
+                        txtStatus.setText("Aguardando jogada do adversário...");
                     }
-
+                    atualizaView();
                     break;
                 case PartidaActions.PARTIDA_AGUARDANDO_J2:
                     partida = event.getPartida();
@@ -258,6 +267,7 @@ public class MainActivity extends Activity
                     isJogador1=true;
                     // iniciar processo de verificacao de inicio de partida
                     partidaActions.verificaInicio(partida);
+                    txtStatus.setText("Procurando adversário...");
                     break;
                 //evento que indica que o adversario jogou
                 case PartidaActions.PARTIDA_JOGADA:
@@ -287,6 +297,9 @@ public class MainActivity extends Activity
         cardEscolherCategoria.setVisibility(View.INVISIBLE);
         //analisar e mostrar se ganhou ou perdeu
         if(ganhei()){
+            if(!isMyTurn){
+                atualizaCartas();
+            }
             isMyTurn =true;
             resultado.setText(getResources().getString(R.string.venceu));
             cartas1.add(cartas2.get(0));
@@ -297,6 +310,7 @@ public class MainActivity extends Activity
             // TODO: 24/03/2016 mostra a proxima carta
 
             txtStatus.setText("Aguardando sua jogada...");
+
         }else{
             isMyTurn=false;
             resultado.setText(getResources().getString(R.string.perdeu));
@@ -305,7 +319,7 @@ public class MainActivity extends Activity
             mudaCartas(2);
             cartas1.remove(0);
             peso1.remove(0);
-            partidaActions.verificaJogada(partida);
+            partidaActions.verificaJogada(partida,isJogador1);
             txtStatus.setText("Aguardando jogada do adversário...");
 
             final Handler handler = new Handler();
@@ -320,38 +334,46 @@ public class MainActivity extends Activity
     }
 
     private void atualizaJogadores() {
-        if(isJogador1) {
-            ParseObject p = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
-            p.fetchInBackground(new GetCallback<ParseObject>() {
-                @Override
-                public void done(ParseObject object, ParseException e) {
-                    meuPolitico = object;
-                }
-            });
+        try {
+            if(isJogador1) {
+                ParseObject p = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
+                p.fetch();
+                meuPolitico = p;
+//                p.fetchInBackground(new GetCallback<ParseObject>() {
+//                    @Override
+//                    public void done(ParseObject object, ParseException e) {
+//                        meuPolitico = object;
+//                    }
+//                });
 
-            ParseObject p2 = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
-            p2.fetchInBackground(new GetCallback<ParseObject>() {
-                @Override
-                public void done(ParseObject object, ParseException e) {
-                    adversarioPolitico = object;
-                }
-            });
-        }else{
-            ParseObject p = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
-            p.fetchInBackground(new GetCallback<ParseObject>() {
-                @Override
-                public void done(ParseObject object, ParseException e) {
-                    meuPolitico = object;
-                }
-            });
+                ParseObject p2 = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
 
-            ParseObject p2 = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
-            p2.fetchInBackground(new GetCallback<ParseObject>() {
-                @Override
-                public void done(ParseObject object, ParseException e) {
-                    adversarioPolitico = object;
-                }
-            });
+                p2.fetch();
+                adversarioPolitico = p2;
+
+            }else{
+                ParseObject p = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
+                p.fetch();
+                meuPolitico=p;
+//                p.fetchInBackground(new GetCallback<ParseObject>() {
+//                    @Override
+//                    public void done(ParseObject object, ParseException e) {
+//                        meuPolitico = object;
+//                    }
+//                });
+
+                ParseObject p2 = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
+                p2.fetch();
+                adversarioPolitico = p2;
+//                p2.fetchInBackground(new GetCallback<ParseObject>() {
+//                    @Override
+//                    public void done(ParseObject object, ParseException e) {
+//                        adversarioPolitico = object;
+//                    }
+//                });
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
         }
     }
 
@@ -360,13 +382,21 @@ public class MainActivity extends Activity
      * @return se ganhou ou nao
      */
     private boolean ganhei() {
-        //busca o item selecionado
-        int item = 1;
+
+        List<Object> meuPeso;
+        List<Object> adversarioPeso;
+        if(isJogador1){
+            meuPeso = peso1;
+            adversarioPeso = peso2;
+        }else{
+            meuPeso = peso2;
+            adversarioPeso = peso1;
+        }
 
         if(adversarioPolitico.getString("nome").equals("Super Cidadão")){
             Log.d(TAG,String.format("meu politico %s: %s adv %s",
                     meuPolitico.getString("nome"),
-                    peso1.get(0).toString(),
+                    meuPeso.get(0).toString(),
                     adversarioPolitico.getString("nome")
             ));
             if(peso1.get(0).toString().substring(1).equals("1")){
@@ -379,7 +409,7 @@ public class MainActivity extends Activity
         if(meuPolitico.getString("nome").equals("Super Cidadão")){
             Log.d("SUPER_CIDADAO",String.format("meu politico %s: %s adv %s",
                     adversarioPolitico.getString("nome"),
-                    peso2.get(0).toString(),
+                    adversarioPeso.get(0).toString(),
                     meuPolitico.getString("nome")
             ));
             if(peso2.get(0).toString().substring(1).equals("1")){
@@ -456,7 +486,6 @@ public class MainActivity extends Activity
         //carregar a primeira carta
         if(isJogador1){
             ParseObject p = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
-
             p.fetchInBackground(new GetCallback<ParseObject>() {
                 @Override
                 public void done(ParseObject object, ParseException e) {
@@ -489,6 +518,7 @@ public class MainActivity extends Activity
             Imagem.getFotoPolitico(politico,fotoPolitico);
             cardEscolherCategoria.setVisibility(View.VISIBLE);
             array_list_title[0]=String.format(Locale.getDefault(),"Faltas: %d",politico.getNumber("faltas").intValue());
+            assert politico.getNumber("gastos") != null;
             array_list_title[1]=String.format(Locale.getDefault(),"Gastos Total: R$ %.2f",politico.getNumber("gastos").floatValue());
             array_list_title[2]=String.format(Locale.getDefault(),"Avaliação: %.1f",politico.getNumber("mediaAvaliacao").floatValue());
         }
@@ -561,6 +591,7 @@ public class MainActivity extends Activity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
+            startActivity(new Intent(this,LoginActivity.class));
             // Handle the camera action
         } else if (id == R.id.nav_gallery) {
 

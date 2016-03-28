@@ -1,6 +1,5 @@
 package com.monitorabrasil.supercidadao.actions;
 
-import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
@@ -58,8 +57,8 @@ public class PartidaActions {
                 HashMap<String,Object> param = new HashMap<String, Object>();
                 if (object != null) {
                     if(e == null){
-                        // ParseUser user = new ParseUser().getParseUser("kx61Sf8DKs");
-                        param.put("id","kx61Sf8DKs");
+                        ParseUser user = ParseUser.getCurrentUser();
+                        param.put("id",user.getObjectId());
                         param.put("idPartida",object.getObjectId());
                         final ParseObject partida = object;
                         ParseCloud.callFunctionInBackground("inserirJogador2", param, new FunctionCallback<String>() {
@@ -93,8 +92,8 @@ public class PartidaActions {
 
                 } else {
                     //cria uma partida
-                    // ParseUser user = new ParseUser().getParseUser("kx61Sf8DKs");
-                    param.put("id","QduMwdNj4X");
+                    ParseUser user = ParseUser.getCurrentUser();
+                    param.put("id",user.getObjectId());
                     ParseCloud.callFunctionInBackground("criarPartida", param, new FunctionCallback<String>() {
                         @Override
                         public void done(String object, ParseException e) {
@@ -149,7 +148,7 @@ public class PartidaActions {
      * Atualiza a informacao se a partida iniciou
      * @param partida objeto partida
      */
-    public void verificaInicio(ParseObject partida) {
+    public void verificaInicio(final ParseObject partida) {
         Log.d(MainActivity.TAG,"Verificando inicio da partida");
         partida.fetchInBackground(new GetCallback<ParseObject>() {
             @Override
@@ -157,7 +156,7 @@ public class PartidaActions {
                 if(object.getList("cartas1")!= null){
                     EventBus.getDefault().post(new PartidaEvent(PARTIDA_INICIAR, object, null));
                 }else{
-                   buscaInformacaoPartida(object);
+                    buscaInformacaoPartida(partida);
                 }
             }
         });
@@ -174,19 +173,19 @@ public class PartidaActions {
             public void run() {
                 verificaInicio(object);
             }
-        }, 3000);
+        }, 5000);
     }
 
     /**
      * Verifica se o adversario jogou
      * @param partida partida em andamento
      */
-    public void verificaJogada(final ParseObject partida) {
-        Log.d(MainActivity.TAG,"Verificando inicio da partida");
+    public void verificaJogada(final ParseObject partida, final boolean isJogador1) {
+        Log.d(MainActivity.TAG,"Verificando jogada");
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Jogada");
         query.whereEqualTo("partida",partida);
         query.whereEqualTo("retornou",false);
-        query.whereEqualTo("j1",false);
+        query.whereEqualTo("j1",!isJogador1);
         query.addAscendingOrder("createdAt");
         query.getFirstInBackground(new GetCallback<ParseObject>() {
             @Override
@@ -198,18 +197,18 @@ public class PartidaActions {
                     event.setJogada(object);
                     EventBus.getDefault().post(event);
                 }else{
-                    buscaInformacaoJogada(partida);
+                    buscaInformacaoJogada(partida,isJogador1);
                 }
             }
         });
     }
 
-    private void buscaInformacaoJogada(final ParseObject partida) {
+    private void buscaInformacaoJogada(final ParseObject partida, final boolean isJogador1) {
         final Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                verificaJogada(partida);
+                verificaJogada(partida,isJogador1);
             }
         }, 3000);
     }
