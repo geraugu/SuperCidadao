@@ -12,20 +12,29 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.view.animation.LinearInterpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.easyandroidanimations.library.Animation;
+import com.easyandroidanimations.library.AnimationListener;
+import com.easyandroidanimations.library.FlipHorizontalAnimation;
+import com.easyandroidanimations.library.PuffInAnimation;
+import com.easyandroidanimations.library.PuffOutAnimation;
+import com.easyandroidanimations.library.SlideOutAnimation;
 import com.monitorabrasil.supercidadao.POJO.PartidaEvent;
 import com.monitorabrasil.supercidadao.R;
 import com.monitorabrasil.supercidadao.actions.PartidaActions;
@@ -47,6 +56,9 @@ public class MainActivity extends Activity
     public static final String TAG = "SUPER_CIDADAO";
     private PartidaActions partidaActions;
     private ParseObject partida;
+
+    private RelativeLayout rlResultadoFundo;
+    private RelativeLayout rlResultado;
 
     private boolean isJogador1;//indica se sou jogador 1
     private boolean isMyTurn; //controle para saber se é minha vez
@@ -111,6 +123,9 @@ public class MainActivity extends Activity
 
     private void setupView() {
 
+        rlResultado = (RelativeLayout)findViewById(R.id.rlResultado);
+        rlResultadoFundo = (RelativeLayout)findViewById(R.id.rlResultadoFundo);
+
         txtPoliticoNome = (TextView)findViewById(R.id.txtNomePolitico);
         txtPeso = (TextView)findViewById(R.id.txtPeso);
         txtResultado = (TextView)findViewById(R.id.resultado);
@@ -144,7 +159,7 @@ public class MainActivity extends Activity
                 //verifica se eh minha vez
                 if (isMyTurn) {
                     //verificar se tem um resultado e mostrar a proxima carta se ele ganhou
-                    if (resultado.getVisibility() == View.VISIBLE) {
+                    if (rlResultado.getVisibility() == View.VISIBLE) {
                         //verifica se tem carta ainda
                         if (cartas1.size() > 0 && cartas2.size() > 0) {
                             mostrarCarta();
@@ -178,10 +193,7 @@ public class MainActivity extends Activity
             }
         });
 
-        //resultado
-        resultado.setVisibility(View.INVISIBLE);
-        //cardview resultado1
-        cardResultado1.setVisibility(View.INVISIBLE);
+
 
     }
 
@@ -198,9 +210,17 @@ public class MainActivity extends Activity
     }
 
     private void mostraResulatdo(){
-        cardResultado1.setVisibility(View.VISIBLE);
-        cardResultado2.setVisibility(View.VISIBLE);
-        resultado.setVisibility(View.VISIBLE);
+        rlResultadoFundo.setVisibility(View.VISIBLE);
+        new PuffInAnimation(rlResultado).setListener(new AnimationListener() {
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                new PuffInAnimation(cardResultado1).animate();
+                new PuffInAnimation(cardResultado2).animate();
+                new PuffInAnimation(resultado).animate();
+            }
+        });
+
+
     }
 
     private void atualizaCartas() {
@@ -213,14 +233,21 @@ public class MainActivity extends Activity
     }
 
     private void mostrarCarta() {
-        cardEscolherCategoria.setVisibility(View.VISIBLE);
+        new FlipHorizontalAnimation(cardEscolherCategoria).setInterpolator(new LinearInterpolator()).animate();
+       //cardEscolherCategoria.setVisibility(View.VISIBLE);
         esconderResultado();
     }
 
     private void esconderResultado(){
-        cardResultado1.setVisibility(View.INVISIBLE);
-        cardResultado2.setVisibility(View.INVISIBLE);
-        resultado.setVisibility(View.INVISIBLE);
+        new PuffOutAnimation(cardResultado1).animate();
+        new PuffOutAnimation(cardResultado2).animate();
+        new PuffOutAnimation(resultado).setListener(new AnimationListener() {
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                rlResultadoFundo.setVisibility(View.INVISIBLE);
+                rlResultadoFundo.setVisibility(View.INVISIBLE);
+            }
+        }).animate();
     }
 
 
@@ -251,6 +278,8 @@ public class MainActivity extends Activity
                     // iniciar processo de verificacao de inicio de partida
                     partidaActions.verificaInicio(partida);
                     txtStatus.setText("Procurando adversário...");
+                    new SlideOutAnimation(btnJogar).setDirection(Animation.DIRECTION_LEFT)
+                            .animate();
                     break;
                 //evento que indica que o adversario jogou
                 case PartidaActions.PARTIDA_JOGADA:
@@ -453,10 +482,14 @@ public class MainActivity extends Activity
         else
             jogador1 = partida.getParseUser("j2");
 
-        jogador1.fetchIfNeededInBackground(new GetCallback<ParseObject>() {
+        jogador1.fetchIfNeededInBackground(new GetCallback<ParseUser>() {
             @Override
-            public void done(ParseObject object, ParseException e) {
-                j1.setText(object.getString("nome"));
+            public void done(ParseUser object, ParseException e) {
+                if(!TextUtils.isEmpty(object.getString("nome"))) {
+                    j1.setText(object.getString("nome"));
+                }else{
+                    j1.setText(object.getUsername());
+                }
             }
         });
 
@@ -466,10 +499,14 @@ public class MainActivity extends Activity
             jogador2 = partida.getParseUser("j2");
         else
             jogador2 = partida.getParseUser("j1");
-        jogador2.fetchInBackground(new GetCallback<ParseObject>() {
+        jogador2.fetchIfNeededInBackground(new GetCallback<ParseUser>() {
             @Override
-            public void done(ParseObject object, ParseException e) {
-                j2.setText(object.getString("nome"));
+            public void done(ParseUser object, ParseException e) {
+                if(!TextUtils.isEmpty(object.getString("nome"))) {
+                    j2.setText(object.getString("nome"));
+                }else{
+                    j2.setText(object.getUsername());
+                }
             }
         });
         //cartas
@@ -515,8 +552,10 @@ public class MainActivity extends Activity
         }else{
             Imagem.getFotoPolitico(politico,fotoPolitico);
             array_list_title[0]=String.format(Locale.getDefault(),"Faltas: %d",politico.getNumber("faltas").intValue());
-            assert politico.getNumber("gastos") != null;
-            array_list_title[1]=String.format(Locale.getDefault(),"Gastos Total: R$ %.2f",politico.getNumber("gastos").floatValue());
+            float gastos=0;
+            if(politico.getNumber("gastos") != null)
+                gastos = politico.getNumber("gastos").floatValue();
+            array_list_title[1]=String.format(Locale.getDefault(),"Gastos Total: R$ %.2f",gastos);
             array_list_title[2]=String.format(Locale.getDefault(),"Avaliação: %.1f",politico.getNumber("mediaAvaliacao").floatValue());
         }
         ArrayAdapter<String> arrayAdapter =
@@ -601,7 +640,7 @@ public class MainActivity extends Activity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
+        if (id == R.id.nav_cadastro) {
             startActivity(new Intent(this,LoginActivity.class));
             // Handle the camera action
         } else if (id == R.id.nav_gallery) {

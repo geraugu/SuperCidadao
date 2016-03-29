@@ -16,17 +16,6 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"
-        android:background="@android:color/white"
-        android:alpha=".2"
-        android:visibility="invisible">
-
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <Button
@@ -66,25 +55,25 @@
                 android:elevation="15.0dp">
 
             </android.support.v7.widget.CardView>
-<LinearLayout
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_gravity="left|bottom"
-    android:layout_marginLeft="3dp"
-    android:orientation="horizontal">
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@android:color/white"
-        android:text="Cartas: "/>
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="16"
-                android:id="@+id/txtCartas1"
-                android:textColor="@android:color/white" />
-</LinearLayout>
+                android:layout_gravity="left|bottom"
+                android:layout_marginLeft="3dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:text="Cartas: "/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:text="16"
+                    android:id="@+id/txtCartas1"
+                    android:textColor="@android:color/white" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -163,34 +152,6 @@
 
         <android.support.v7.widget.CardView
             xmlns:card_view="http://schemas.android.com/apk/res-auto"
-            android:id="@+id/card_view_resultado1"
-            android:layout_gravity="center"
-            android:layout_width="140dp"
-            android:layout_height="180dp"
-            card_view:cardCornerRadius="4dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_marginRight="5dp"
-            android:visibility="invisible">
-
-        </android.support.v7.widget.CardView>
-        <android.support.v7.widget.CardView
-            xmlns:card_view="http://schemas.android.com/apk/res-auto"
-            android:id="@+id/card_view_resultado2"
-            android:layout_gravity="center"
-            android:layout_width="140dp"
-            android:layout_height="180dp"
-            card_view:cardCornerRadius="4dp"
-            android:layout_centerVertical="true"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_marginLeft="5dp"
-            android:visibility="invisible">
-
-        </android.support.v7.widget.CardView>
-        <android.support.v7.widget.CardView
-            xmlns:card_view="http://schemas.android.com/apk/res-auto"
             android:id="@+id/cardEscolherCategoria"
             android:layout_gravity="center"
             android:layout_width="match_parent"
@@ -247,14 +208,14 @@
                     android:layout_below="@+id/txtNomePolitico"
                     android:id="@+id/listview_categorias"/>
 
-              <!--  <android.support.v7.widget.RecyclerView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_below="@+id/txtNomePolitico"
-                    android:id="@+id/recycler_view_ficha">
+                <!--  <android.support.v7.widget.RecyclerView
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      android:layout_below="@+id/txtNomePolitico"
+                      android:id="@+id/recycler_view_ficha">
 
 
-                </android.support.v7.widget.RecyclerView>-->
+                  </android.support.v7.widget.RecyclerView>-->
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -272,17 +233,85 @@
 
 
     </RelativeLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:visibility="invisible"
+        android:id="@+id/rlResultadoFundo"
+        android:background="@android:color/white"
+        android:alpha=".2">
+    </RelativeLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="You won!!"
-        android:id="@+id/resultado"
-        android:layout_centerInParent="true"
-        android:background="@android:color/holo_orange_light"
-        android:padding="15dp"
-        android:visibility="invisible" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:visibility="invisible"
+            android:id="@+id/rlResultado">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:text="You won!!"
+                android:id="@+id/resultado"
+                android:background="@android:color/holo_orange_light"
+                android:padding="15dp"
+                android:visibility="invisible"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@+id/resultado"
+                android:layout_centerHorizontal="true">
+
+                <android.support.v7.widget.CardView
+                    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+                    android:id="@+id/card_view_resultado1"
+                    android:layout_gravity="top"
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    card_view:cardCornerRadius="4dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginRight="5dp"
+                    android:visibility="invisible"
+                    android:layout_below="@+id/resultado"
+                    android:layout_weight="1">
+                    <include
+                        layout="@layout/ficha_resultado"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                </android.support.v7.widget.CardView>
+
+                <android.support.v7.widget.CardView
+                    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+                    android:id="@+id/card_view_resultado2"
+                    android:layout_gravity="top"
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    card_view:cardCornerRadius="4dp"
+                    android:visibility="invisible"
+                    android:layout_alignTop="@+id/card_view_resultado1"
+                    android:layout_alignParentLeft="true"
+                    android:layout_alignParentStart="true"
+                    android:layout_weight="1">
+                    <include
+                        layout="@layout/ficha_resultado"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                </android.support.v7.widget.CardView>
+            </LinearLayout>
+        </RelativeLayout>
+
 
     <TextView
         android:layout_width="wrap_content"
