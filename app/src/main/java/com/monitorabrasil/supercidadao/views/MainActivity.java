@@ -286,6 +286,7 @@ public class MainActivity extends Activity
             isMyTurn =true;
             txtStatus.setText("Sua vez...");
             final Handler handler = new Handler();
+
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -314,16 +315,23 @@ public class MainActivity extends Activity
             atualizaCartas();
         }
         mostraResulatdo();
-        atualizaJogadores();
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                atualizaJogadores();
+            }
+        }, 5000);
+
     }
 
     private void atualizaPlacar() {
         if(isJogador1) {
-            txtcartas1.setText(String.valueOf(cartas1.size()));
-            txtcartas2.setText(String.valueOf(cartas2.size()));
-        }else{
-            txtcartas1.setText(String.valueOf(cartas2.size()));
             txtcartas2.setText(String.valueOf(cartas1.size()));
+            txtcartas1.setText(String.valueOf(cartas2.size()));
+        }else{
+            txtcartas2.setText(String.valueOf(cartas2.size()));
+            txtcartas1.setText(String.valueOf(cartas1.size()));
         }
     }
 
@@ -333,6 +341,9 @@ public class MainActivity extends Activity
                 ParseObject p = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
                 p.fetch();
                 meuPolitico = p;
+                if(isMyTurn){
+                    montaCarta(meuPolitico,peso1.get(0).toString());
+                }
 
                 ParseObject p2 = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
                 p2.fetch();
@@ -342,6 +353,9 @@ public class MainActivity extends Activity
                 ParseObject p = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
                 p.fetch();
                 meuPolitico=p;
+                if(isMyTurn){
+                    montaCarta(meuPolitico,peso2.get(0).toString());
+                }
 
                 ParseObject p2 = ParseObject.createWithoutData("Politico", cartas1.get(0).toString());
                 p2.fetch();
