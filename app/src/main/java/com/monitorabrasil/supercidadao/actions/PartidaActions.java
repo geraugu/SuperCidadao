@@ -125,6 +125,36 @@ public class PartidaActions {
         });
     }
 
+    public void iniciarPartidaComputador(final ParseObject partida) {
+        HashMap<String,Object> param = new HashMap<String, Object>();
+        param.put("id",partida.getObjectId());
+        ParseCloud.callFunctionInBackground("jogarComputer", param, new FunctionCallback<String>() {
+            @Override
+            public void done(String object, ParseException e) {
+                if(e==null){
+                    //criou o jogo
+                    try {
+                        JSONObject json = new JSONObject(object);
+                        if(!json.getBoolean("erro")){
+                            partida.fetchInBackground(new GetCallback<ParseObject>() {
+                                @Override
+                                public void done(ParseObject object, ParseException e) {
+                                    EventBus.getDefault().post(new PartidaEvent(PARTIDA_INICIAR, partida, null));
+                                }
+                            });
+
+                        }else{
+                            PartidaEvent event = new PartidaEvent(PARTIDA_INICIAR);
+                            event.setErro(AppController.getInstance().getResources().getString(R.string.erro_criar_partida));
+                        }
+                    } catch (JSONException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
+
     /**
      * Salva a jogada executada
      * @param isJogador1 se eh o jogador 1
@@ -214,4 +244,7 @@ public class PartidaActions {
             }
         }, 3000);
     }
+
+
+
 }

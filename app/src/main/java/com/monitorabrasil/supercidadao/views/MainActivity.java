@@ -1,14 +1,17 @@
 package com.monitorabrasil.supercidadao.views;
 
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
@@ -33,11 +36,13 @@ import com.easyandroidanimations.library.AnimationListener;
 import com.easyandroidanimations.library.FlipHorizontalAnimation;
 import com.easyandroidanimations.library.PuffInAnimation;
 import com.easyandroidanimations.library.PuffOutAnimation;
+import com.easyandroidanimations.library.SlideInAnimation;
 import com.easyandroidanimations.library.SlideOutAnimation;
 import com.monitorabrasil.supercidadao.POJO.PartidaEvent;
 import com.monitorabrasil.supercidadao.R;
 import com.monitorabrasil.supercidadao.actions.PartidaActions;
 import com.monitorabrasil.supercidadao.classes.Imagem;
+import com.parse.DeleteCallback;
 import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
@@ -57,6 +62,7 @@ public class MainActivity extends Activity
     private PartidaActions partidaActions;
     private ParseObject partida;
     private boolean empatou;
+    private boolean computador; //indica se ta jogando com o computador
 
     private RelativeLayout rlResultadoFundo;
     private RelativeLayout rlResultado;
@@ -212,37 +218,64 @@ public class MainActivity extends Activity
 
         }
         txtStatus.setText("Fim de jogo");
+        partida = null;
+        cartas2.clear();
+        cartas1.clear();
+        peso1.clear();
+        peso2.clear();
+        new SlideInAnimation(btnJogar).setDirection(Animation.DIRECTION_RIGHT)
+                .animate();
     }
 
     private void montaResultado(View ficha,ParseObject politico, String peso){
         TextView nome = (TextView)ficha.findViewById(R.id.fichaNomePolitico);
         TextView txtPeso = (TextView)ficha.findViewById(R.id.fichaPeso);
-        TextView falta = (TextView)ficha.findViewById(R.id.fichaFaltas);
-        TextView gasto = (TextView)ficha.findViewById(R.id.fichaGastos);
-        TextView avaliacao = (TextView)ficha.findViewById(R.id.fichaAvaliacao);
+        TextView categoria = (TextView)ficha.findViewById(R.id.txtCategoria);
+        TextView valor = (TextView)ficha.findViewById(R.id.fichaValorCategoria);
         ImageView foto = (ImageView)ficha.findViewById(R.id.fichaFoto);
 
         txtPeso.setText(peso);
         nome.setText(politico.getString("nome"));
-
-
+        boolean isSuper = false;
         if(politico.getString("nome").equals("Super Cidadão")){
-            falta.setText("NENHUMA");
-            gasto.setText("R$ 0,00");
-            avaliacao.setText("5");
+            isSuper=true;
         }else{
             Imagem.getFotoPolitico(politico,foto);
-            falta.setText(String.valueOf(politico.getNumber("faltas").intValue()));
-            float gastos=0;
-            if(politico.getNumber("gastos") != null)
-                gastos = politico.getNumber("gastos").floatValue();
-            gasto.setText(String.format(Locale.getDefault(),"R$ %.2f",gastos));
-            float aval = 0;
-            if(politico.getNumber("mediaAvaliacao") != null){
-                aval = politico.getNumber("mediaAvaliacao").floatValue();
-            }
-            avaliacao.setText(String.format(Locale.getDefault(),"%.1f",aval));
         }
+        switch (categoriaSelecionada){
+            case 0:
+                categoria.setText("Faltas");
+                if(isSuper)
+                    valor.setText("NENHUMA");
+                else
+                    valor.setText(String.valueOf(politico.getNumber("faltas").intValue()));
+                break;
+            case 1:
+                categoria.setText("Valor gasto");
+                if(isSuper)
+                    valor.setText("R$ 0,00");
+                else {
+                    float gastos = 0;
+                    if (politico.getNumber("gastos") != null)
+                        gastos = politico.getNumber("gastos").floatValue();
+                    valor.setText(String.format(Locale.getDefault(), "R$ %.2f", gastos));
+                }
+                break;
+            case 2:
+                categoria.setText("Avaliação");
+                if(isSuper)
+                    valor.setText("5!!");
+                else {
+                    float aval = 0;
+                    if (politico.getNumber("mediaAvaliacao") != null) {
+                        aval = politico.getNumber("mediaAvaliacao").floatValue();
+                    }
+                    valor.setText(String.format(Locale.getDefault(), "%.1f", aval));
+                }
+                break;
+        }
+
+
 
     }
 
@@ -271,7 +304,7 @@ public class MainActivity extends Activity
 
     private void mostrarCarta() {
         new FlipHorizontalAnimation(cardEscolherCategoria).setInterpolator(new LinearInterpolator()).animate();
-       //cardEscolherCategoria.setVisibility(View.VISIBLE);
+        //cardEscolherCategoria.setVisibility(View.VISIBLE);
         esconderResultado();
     }
 
@@ -292,6 +325,7 @@ public class MainActivity extends Activity
     public void onMessageEvent(PartidaEvent event){
         if(event.getErro()==null) {
             switch (event.getAction()) {
+
                 case PartidaActions.PARTIDA_INICIAR:
                     partida = event.getPartida();
                     Snackbar.make(j1, "Partida iniciada", Snackbar.LENGTH_LONG)
@@ -301,25 +335,39 @@ public class MainActivity extends Activity
                     if(partida.getParseUser("j1").equals(ParseUser.getCurrentUser())){
                         isMyTurn=true;
                     }else{
-                        //verificar se houve jogada - jogador 2
-                        partidaActions.verificaJogada(partida,isJogador1);
-                        txtStatus.setText("Aguardando jogada do adversário...");
+                        if(!computador) {
+                            //verificar se houve jogada - jogador 2
+                            partidaActions.verificaJogada(partida, isJogador1);
+                            txtStatus.setText("Aguardando jogada do adversário...");
+                        }
                     }
                     new SlideOutAnimation(btnJogar).setDirection(Animation.DIRECTION_LEFT)
                             .animate();
                     atualizaView();
                     break;
+
                 case PartidaActions.PARTIDA_AGUARDANDO_J2:
                     partida = event.getPartida();
                     Snackbar.make(getCurrentFocus(), "Aguardando oponente", Snackbar.LENGTH_LONG)
                             .show();
                     isJogador1=true;
+
                     // iniciar processo de verificacao de inicio de partida
                     partidaActions.verificaInicio(partida);
                     txtStatus.setText("Procurando adversário...");
                     new SlideOutAnimation(btnJogar).setDirection(Animation.DIRECTION_LEFT)
                             .animate();
+
+                    //perguntar se quer jogar contra o computador dps de 20 segundos
+                    final Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            abrePertunta();
+                        }
+                    }, 20000);
                     break;
+
                 //evento que indica que o adversario jogou
                 case PartidaActions.PARTIDA_JOGADA:
                     ultimaJogada = event.getJogada();
@@ -329,6 +377,32 @@ public class MainActivity extends Activity
             }
         }else{
             Toast.makeText(getApplicationContext(),event.getErro(),Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /**
+     * Pergunta se quer jogar contra o computador
+     */
+    private void abrePertunta() {
+        if(partida.getList("cartas1") == null){
+            final AlertDialog.Builder alerta = new AlertDialog.Builder(MainActivity.this);
+            alerta.setTitle("Quer jogar contra o computador?");
+            alerta.setPositiveButton("Sim", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    //iniciar contra o computador
+                    computador=true;
+                    partidaActions.iniciarPartidaComputador(partida);
+                }
+            });
+            alerta.setNegativeButton("Não", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            AlertDialog a = alerta.create();
+            a.show();
         }
     }
 
@@ -390,7 +464,16 @@ public class MainActivity extends Activity
                             mostrarCarta();
                         }
                     }, 5000);
+                    txtStatus.setText("Empatou, jogue novamente...");
+                }else{
+                    partidaActions.verificaJogada(partida, isJogador1);
+                    if(computador){
+                        //computer joga
+                        computadorJoga();
+                    }
+                    txtStatus.setText("Empatou, aguardando jogada do adversário...");
                 }
+                atualizaPlacar();
                 empatou= false;
             }else {
                 resultado.setText(getResources().getString(R.string.perdeu));
@@ -399,6 +482,10 @@ public class MainActivity extends Activity
                 atualizaPlacar();
 
                 partidaActions.verificaJogada(partida, isJogador1);
+                if(computador){
+                    //computer joga
+                    computadorJoga();
+                }
                 isMyTurn = false;
                 txtStatus.setText("Aguardando jogada do adversário...");
             }
@@ -419,6 +506,20 @@ public class MainActivity extends Activity
             @Override
             public void run() {
                 atualizaJogadores();
+            }
+        }, 5000);
+
+    }
+
+    private void computadorJoga() {
+        numJogadas++;
+        //sortei a categoria selecionada
+        categoriaSelecionada = (int) (Math.random() * 3 );
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                partidaActions.enviaJogada(false,cartas1.get(0), cartas2.get(0), partida, categoriaSelecionada,numJogadas);
             }
         }, 5000);
 
@@ -522,7 +623,7 @@ public class MainActivity extends Activity
                     retorno = true;
                 }
                 if(adversarioPolitico.getNumber("faltas").intValue() == meuPolitico.getNumber("faltas").intValue()){
-                     empatou = true;
+                    empatou = true;
                 }
                 break;
             case 1://gastos total
@@ -565,29 +666,32 @@ public class MainActivity extends Activity
             @Override
             public void done(ParseUser object, ParseException e) {
                 if(!TextUtils.isEmpty(object.getString("nome"))) {
-                    j1.setText(object.getString("nome"));
-                }else{
-                    j1.setText(object.getUsername());
-                }
-            }
-        });
-
-
-        ParseUser jogador2;
-        if(isJogador1)
-            jogador2 = partida.getParseUser("j2");
-        else
-            jogador2 = partida.getParseUser("j1");
-        jogador2.fetchIfNeededInBackground(new GetCallback<ParseUser>() {
-            @Override
-            public void done(ParseUser object, ParseException e) {
-                if(!TextUtils.isEmpty(object.getString("nome"))) {
                     j2.setText(object.getString("nome"));
                 }else{
                     j2.setText(object.getUsername());
                 }
             }
         });
+
+        if(computador){
+            j1.setText("Computador");
+        }else {
+            ParseUser jogador2;
+            if (isJogador1)
+                jogador2 = partida.getParseUser("j2");
+            else
+                jogador2 = partida.getParseUser("j1");
+            jogador2.fetchIfNeededInBackground(new GetCallback<ParseUser>() {
+                @Override
+                public void done(ParseUser object, ParseException e) {
+                    if (!TextUtils.isEmpty(object.getString("nome"))) {
+                        j1.setText(object.getString("nome"));
+                    } else {
+                        j1.setText(object.getUsername());
+                    }
+                }
+            });
+        }
         //cartas
         cartas1 = partida.getList("cartas1");
         cartas2 = partida.getList("cartas2");
