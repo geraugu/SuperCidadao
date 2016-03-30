@@ -30,4 +30,8 @@
     <string name="anonimo">Logar anonimamente</string>
     <string name="action_logout">Logout</string>
     <string name="atualizado_sucesso">Cadastro atualizado com sucesso! ;)</string>
+    <string name="faltas">Faltas</string>
+    <string name="gastos_total">Gastos total</string>
+    <string name="avaliacao_monitora">Avaliação no Monitora Brasil</string>
+    <string name="empatou">Empatou ...</string>
 </resources>

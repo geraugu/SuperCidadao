@@ -15,7 +15,7 @@
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="A1"
-            android:id="@+id/txtPeso"
+            android:id="@+id/fichaPeso"
             android:layout_marginLeft="4dp"
             android:layout_marginTop="4dp"
             android:textColor="@android:color/black" />
@@ -23,35 +23,91 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/foto"
+            android:id="@+id/fichaFoto"
             android:layout_marginTop="19dp"
             android:src="@android:drawable/sym_def_app_icon"
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true" />
 
-        <ListView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_below="@+id/txtNomePolitico"
-            android:id="@+id/listview_categorias"/>
-
-        <!--  <android.support.v7.widget.RecyclerView
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:layout_below="@+id/txtNomePolitico"
-              android:id="@+id/recycler_view_ficha">
 
 
-          </android.support.v7.widget.RecyclerView>-->
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:text="Medium Text"
-            android:id="@+id/txtNomePolitico"
-            android:layout_below="@+id/foto"
+            android:id="@+id/fichaNomePolitico"
+            android:layout_below="@+id/fichaFoto"
             android:layout_centerHorizontal="true"
             android:textColor="@android:color/background_light" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/fichaNomePolitico"
+            android:layout_centerHorizontal="true"
+            android:layout_margin="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/faltas"
+                android:id="@+id/textView2" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:id="@+id/fichaFaltas"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/gastos_total"
+                android:id="@+id/textView4"
+                android:layout_below="@+id/textView2"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="8dp"
+                android:layout_toLeftOf="@+id/fichaGastos"
+                android:layout_toStartOf="@+id/fichaGastos" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/avaliacao_monitora"
+                android:id="@+id/textView5"
+                android:layout_below="@+id/textView4"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_marginTop="8dp"
+                android:layout_toLeftOf="@+id/fichaAvaliacao"
+                android:layout_toStartOf="@+id/fichaAvaliacao" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="R$0,000"
+                android:id="@+id/fichaGastos"
+                android:layout_below="@+id/fichaFaltas"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.0"
+                android:id="@+id/fichaAvaliacao"
+                android:layout_below="@+id/fichaGastos"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp" />
+        </RelativeLayout>
     </RelativeLayout>
 </LinearLayout>

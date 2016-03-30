@@ -10,7 +10,6 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.CardView;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
@@ -47,6 +46,7 @@ import com.parse.ParseUser;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -56,6 +56,7 @@ public class MainActivity extends Activity
     public static final String TAG = "SUPER_CIDADAO";
     private PartidaActions partidaActions;
     private ParseObject partida;
+    private boolean empatou;
 
     private RelativeLayout rlResultadoFundo;
     private RelativeLayout rlResultado;
@@ -90,6 +91,8 @@ public class MainActivity extends Activity
     private List<Object> cartas2;
     private List<Object> peso1;
     private List<Object> peso2;
+    private List<Object> monte;
+    private List<Object> pesoMonte;
 
     private ParseObject meuPolitico; //carta da vez
     private ParseObject adversarioPolitico; //carta da vez
@@ -123,13 +126,15 @@ public class MainActivity extends Activity
 
     private void setupView() {
 
+        monte = new ArrayList<>();
+        pesoMonte = new ArrayList<>();
         rlResultado = (RelativeLayout)findViewById(R.id.rlResultado);
         rlResultadoFundo = (RelativeLayout)findViewById(R.id.rlResultadoFundo);
 
-        txtPoliticoNome = (TextView)findViewById(R.id.txtNomePolitico);
+        txtPoliticoNome = (TextView)findViewById(R.id.fichaNomePolitico);
         txtPeso = (TextView)findViewById(R.id.txtPeso);
         txtResultado = (TextView)findViewById(R.id.resultado);
-        fotoPolitico = (ImageView)findViewById(R.id.foto);
+        fotoPolitico = (ImageView)findViewById(R.id.fichaFoto);
         listViewCategoria = (ListView)findViewById(R.id.listview_categorias);
 
         cardEscolherCategoria = (CardView)findViewById(R.id.cardEscolherCategoria);
@@ -209,6 +214,38 @@ public class MainActivity extends Activity
         txtStatus.setText("Fim de jogo");
     }
 
+    private void montaResultado(View ficha,ParseObject politico, String peso){
+        TextView nome = (TextView)ficha.findViewById(R.id.fichaNomePolitico);
+        TextView txtPeso = (TextView)ficha.findViewById(R.id.fichaPeso);
+        TextView falta = (TextView)ficha.findViewById(R.id.fichaFaltas);
+        TextView gasto = (TextView)ficha.findViewById(R.id.fichaGastos);
+        TextView avaliacao = (TextView)ficha.findViewById(R.id.fichaAvaliacao);
+        ImageView foto = (ImageView)ficha.findViewById(R.id.fichaFoto);
+
+        txtPeso.setText(peso);
+        nome.setText(politico.getString("nome"));
+
+
+        if(politico.getString("nome").equals("Super Cidadão")){
+            falta.setText("NENHUMA");
+            gasto.setText("R$ 0,00");
+            avaliacao.setText("5");
+        }else{
+            Imagem.getFotoPolitico(politico,foto);
+            falta.setText(String.valueOf(politico.getNumber("faltas").intValue()));
+            float gastos=0;
+            if(politico.getNumber("gastos") != null)
+                gastos = politico.getNumber("gastos").floatValue();
+            gasto.setText(String.format(Locale.getDefault(),"R$ %.2f",gastos));
+            float aval = 0;
+            if(politico.getNumber("mediaAvaliacao") != null){
+                aval = politico.getNumber("mediaAvaliacao").floatValue();
+            }
+            avaliacao.setText(String.format(Locale.getDefault(),"%.1f",aval));
+        }
+
+    }
+
     private void mostraResulatdo(){
         rlResultadoFundo.setVisibility(View.VISIBLE);
         new PuffInAnimation(rlResultado).setListener(new AnimationListener() {
@@ -218,7 +255,7 @@ public class MainActivity extends Activity
                 new PuffInAnimation(cardResultado2).animate();
                 new PuffInAnimation(resultado).animate();
             }
-        });
+        }).animate();
 
 
     }
@@ -268,6 +305,8 @@ public class MainActivity extends Activity
                         partidaActions.verificaJogada(partida,isJogador1);
                         txtStatus.setText("Aguardando jogada do adversário...");
                     }
+                    new SlideOutAnimation(btnJogar).setDirection(Animation.DIRECTION_LEFT)
+                            .animate();
                     atualizaView();
                     break;
                 case PartidaActions.PARTIDA_AGUARDANDO_J2:
@@ -306,6 +345,13 @@ public class MainActivity extends Activity
             atualizaJogadores();
         }
         cardEscolherCategoria.setVisibility(View.INVISIBLE);
+        if(isJogador1) {
+            montaResultado(findViewById(R.id.ficha_resultado1), meuPolitico, peso1.get(0).toString());
+            montaResultado(findViewById(R.id.ficha_resultado2), adversarioPolitico, peso2.get(0).toString());
+        }else{
+            montaResultado(findViewById(R.id.ficha_resultado1), meuPolitico, peso2.get(0).toString());
+            montaResultado(findViewById(R.id.ficha_resultado2), adversarioPolitico, peso1.get(0).toString());
+        }
         //analisar e mostrar se ganhou ou perdeu
         if(ganhei()){
             resultado.setText(getResources().getString(R.string.venceu));
@@ -323,15 +369,39 @@ public class MainActivity extends Activity
                 }
             }, 5000);
         }else{
-            resultado.setText(getResources().getString(R.string.perdeu));
-            mudaCartas(false);
-            //atualiza o numero de cartas
-            atualizaPlacar();
+            //se empatou, colocar as duas cartas no monte
+            if(empatou){
+                resultado.setText(getResources().getString(R.string.empatou));
+                //// TODO: 29/03/2016 colocar as cartas no monte
+                monte.add(cartas1.get(0));
+                monte.add(cartas2.get(0));
+                cartas1.remove(0);
+                cartas2.remove(0);
+                pesoMonte.add(peso1.get(0));
+                pesoMonte.add(peso2.get(0));
+                peso1.remove(0);
+                peso2.remove(0);
+                if(isMyTurn){
+                    final Handler handler = new Handler();
 
-            partidaActions.verificaJogada(partida,isJogador1);
-            isMyTurn=false;
-            txtStatus.setText("Aguardando jogada do adversário...");
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            mostrarCarta();
+                        }
+                    }, 5000);
+                }
+                empatou= false;
+            }else {
+                resultado.setText(getResources().getString(R.string.perdeu));
+                mudaCartas(false);
+                //atualiza o numero de cartas
+                atualizaPlacar();
 
+                partidaActions.verificaJogada(partida, isJogador1);
+                isMyTurn = false;
+                txtStatus.setText("Aguardando jogada do adversário...");
+            }
             final Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
                 @Override
@@ -451,15 +521,24 @@ public class MainActivity extends Activity
                 if(adversarioPolitico.getNumber("faltas").intValue() > meuPolitico.getNumber("faltas").intValue()){
                     retorno = true;
                 }
+                if(adversarioPolitico.getNumber("faltas").intValue() == meuPolitico.getNumber("faltas").intValue()){
+                     empatou = true;
+                }
                 break;
             case 1://gastos total
                 if(adversarioPolitico.getNumber("gastos").doubleValue() > meuPolitico.getNumber("gastos").doubleValue()){
                     retorno = true;
                 }
+                if(adversarioPolitico.getNumber("gastos").doubleValue() == meuPolitico.getNumber("gastos").doubleValue()){
+                    empatou = true;
+                }
                 break;
             case 2://avaliacao
                 if(adversarioPolitico.getNumber("mediaAvaliacao").doubleValue() < meuPolitico.getNumber("mediaAvaliacao").doubleValue()){
                     retorno = true;
+                }
+                if(adversarioPolitico.getNumber("mediaAvaliacao").doubleValue() == meuPolitico.getNumber("mediaAvaliacao").doubleValue()){
+                    empatou = true;
                 }
                 break;
             case 3://gastos com divulgação
@@ -556,7 +635,10 @@ public class MainActivity extends Activity
             if(politico.getNumber("gastos") != null)
                 gastos = politico.getNumber("gastos").floatValue();
             array_list_title[1]=String.format(Locale.getDefault(),"Gastos Total: R$ %.2f",gastos);
-            array_list_title[2]=String.format(Locale.getDefault(),"Avaliação: %.1f",politico.getNumber("mediaAvaliacao").floatValue());
+            float aval = 0;
+            if(politico.getNumber("mediaAvaliacao") != null)
+                aval = politico.getNumber("mediaAvaliacao").floatValue();
+            array_list_title[2]=String.format(Locale.getDefault(),"Avaliação: %.1f",aval);
         }
         ArrayAdapter<String> arrayAdapter =
                 new ArrayAdapter<String>(this,android.R.layout.simple_list_item_single_choice, array_list_title);
@@ -568,6 +650,13 @@ public class MainActivity extends Activity
     private void mudaCartas(boolean ganhou) {
         //passar a carta que ganhou para o fim do baralho
         if ((ganhou && isJogador1) || (!ganhou && !isJogador1)) {
+            //verifica se tem carta no monte
+            if(monte.size() > 0){
+                cartas1.addAll(monte);
+                peso1.addAll(pesoMonte);
+                monte.clear();
+                pesoMonte.clear();
+            }
             //coloca a carta que ganhou do jogador 2 em ultimo
             cartas1.add(cartas2.get(0));
             peso1.add(peso2.get(0));
@@ -584,6 +673,12 @@ public class MainActivity extends Activity
             cartas2.remove(0);
             peso2.remove(0);
         } else {//para os casos se ganhei e sou jogador 2 ou se perdi e sou jogador 1
+            if(monte.size() > 0){
+                cartas2.addAll(monte);
+                peso2.addAll(pesoMonte);
+                monte.clear();
+                pesoMonte.clear();
+            }
             //coloca a carta que ganhou do jogador 1 em ultimo
             cartas2.add(cartas1.get(0));
             peso2.add(peso1.get(0));
