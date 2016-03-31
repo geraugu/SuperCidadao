@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -42,7 +41,6 @@ import com.monitorabrasil.supercidadao.POJO.PartidaEvent;
 import com.monitorabrasil.supercidadao.R;
 import com.monitorabrasil.supercidadao.actions.PartidaActions;
 import com.monitorabrasil.supercidadao.classes.Imagem;
-import com.parse.DeleteCallback;
 import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
@@ -627,18 +625,30 @@ public class MainActivity extends Activity
                 }
                 break;
             case 1://gastos total
-                if(adversarioPolitico.getNumber("gastos").doubleValue() > meuPolitico.getNumber("gastos").doubleValue()){
+                double g1=0;
+                double g2=0;
+                if(adversarioPolitico.getNumber("gastos")!= null)
+                    g2=adversarioPolitico.getNumber("gastos").doubleValue();
+                if(meuPolitico.getNumber("gastos")!= null)
+                    g1=meuPolitico.getNumber("gastos").doubleValue();
+                if(g2 > g1){
                     retorno = true;
                 }
-                if(adversarioPolitico.getNumber("gastos").doubleValue() == meuPolitico.getNumber("gastos").doubleValue()){
+                if(g2 == g1){
                     empatou = true;
                 }
                 break;
             case 2://avaliacao
-                if(adversarioPolitico.getNumber("mediaAvaliacao").doubleValue() < meuPolitico.getNumber("mediaAvaliacao").doubleValue()){
+                double a1=0;
+                double a2=0;
+                if(adversarioPolitico.getNumber("mediaAvaliacao")!= null)
+                    a2=adversarioPolitico.getNumber("mediaAvaliacao").doubleValue();
+                if(meuPolitico.getNumber("mediaAvaliacao")!= null)
+                    a1=meuPolitico.getNumber("mediaAvaliacao").doubleValue();
+                if(a2 < a1){
                     retorno = true;
                 }
-                if(adversarioPolitico.getNumber("mediaAvaliacao").doubleValue() == meuPolitico.getNumber("mediaAvaliacao").doubleValue()){
+                if(a1 == a2){
                     empatou = true;
                 }
                 break;
