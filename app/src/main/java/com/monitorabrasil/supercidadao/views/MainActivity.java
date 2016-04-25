@@ -523,8 +523,27 @@ public class MainActivity extends Activity
 
     private void computadorJoga() {
         numJogadas++;
-        //sortei a categoria selecionada
-        categoriaSelecionada = (int) (Math.random() * 3 );
+        //verifica qual carta é melhor para jogar
+        ParseObject p2 = ParseObject.createWithoutData("Politico", cartas2.get(0).toString());
+        try {
+            p2.fetch();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        if(p2.getNumber("faltas").intValue() < 5){
+            categoriaSelecionada = 0;
+        }else{
+            if(p2.getNumber("gastos").doubleValue() < 50000){
+                categoriaSelecionada = 1;
+            }else{
+                if(p2.getNumber("mediaAvaliacao").floatValue() > 3){
+                    categoriaSelecionada = 2;
+                }else{
+                    //sorteia a categoria
+                    categoriaSelecionada = (int) (Math.random() * 3 );
+                }
+            }
+        }
         final Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
