@@ -83,7 +83,7 @@
                 android:layout_gravity="right|top"
                 android:layout_margin="1dp"
                 android:textColor="@android:color/white"
-                android:text="Jogador 1" />
+                android:text="Jogador 2" />
 
         </FrameLayout>
 
@@ -146,7 +146,7 @@
                 android:layout_gravity="left|top"
                 android:layout_margin="1dp"
                 android:textColor="@android:color/white"
-                android:text="Jogador 2" />
+                android:text="Jogador 1" />
 
         </FrameLayout>
 
@@ -205,7 +205,7 @@
                 <ListView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_below="@+id/fichaNomePolitico"
+                    android:layout_below="@+id/fichaCardPartido"
                     android:id="@+id/listview_categorias"/>
 
                 <!--  <android.support.v7.widget.RecyclerView
@@ -224,6 +224,15 @@
                     android:text="Medium Text"
                     android:id="@+id/fichaNomePolitico"
                     android:layout_below="@+id/fichaFoto"
+                    android:layout_centerHorizontal="true"
+                    android:textColor="@android:color/background_light" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:text="Medium Text"
+                    android:id="@+id/fichaCardPartido"
+                    android:layout_below="@+id/fichaNomePolitico"
                     android:layout_centerHorizontal="true"
                     android:textColor="@android:color/background_light" />
             </RelativeLayout>
@@ -319,7 +328,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Small Text"
         android:id="@+id/txtStatus"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"

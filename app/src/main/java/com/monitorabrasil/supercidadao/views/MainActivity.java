@@ -3,11 +3,13 @@ package com.monitorabrasil.supercidadao.views;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -41,6 +43,7 @@ import com.easyandroidanimations.library.SlideOutAnimation;
 import com.monitorabrasil.supercidadao.POJO.PartidaEvent;
 import com.monitorabrasil.supercidadao.R;
 import com.monitorabrasil.supercidadao.actions.PartidaActions;
+import com.monitorabrasil.supercidadao.application.AppController;
 import com.monitorabrasil.supercidadao.classes.Imagem;
 import com.parse.DeleteCallback;
 import com.parse.GetCallback;
@@ -89,6 +92,7 @@ public class MainActivity extends Activity
     private FrameLayout frameJogador;
 
     private TextView txtPoliticoNome;
+    private TextView txtPartido;
     private TextView txtPeso;
     private ImageView fotoPolitico;
     private ListView listViewCategoria;
@@ -138,6 +142,7 @@ public class MainActivity extends Activity
         rlResultadoFundo = (RelativeLayout)findViewById(R.id.rlResultadoFundo);
 
         txtPoliticoNome = (TextView)findViewById(R.id.fichaNomePolitico);
+        txtPartido = (TextView)findViewById(R.id.fichaCardPartido);
         txtPeso = (TextView)findViewById(R.id.txtPeso);
         txtResultado = (TextView)findViewById(R.id.resultado);
         fotoPolitico = (ImageView)findViewById(R.id.fichaFoto);
@@ -229,6 +234,7 @@ public class MainActivity extends Activity
 
     private void montaResultado(View ficha,ParseObject politico, String peso){
         TextView nome = (TextView)ficha.findViewById(R.id.fichaNomePolitico);
+        TextView partido = (TextView)ficha.findViewById(R.id.fichaPartido);
         TextView txtPeso = (TextView)ficha.findViewById(R.id.fichaPeso);
         TextView categoria = (TextView)ficha.findViewById(R.id.txtCategoria);
         TextView valor = (TextView)ficha.findViewById(R.id.fichaValorCategoria);
@@ -239,8 +245,12 @@ public class MainActivity extends Activity
         boolean isSuper = false;
         if(politico.getString("nome").equals("Super Cidadão")){
             isSuper=true;
+            Drawable imagem = ContextCompat.getDrawable(this,R.drawable.ic_launcher);
+            foto.setImageDrawable(imagem);
+            partido.setText("BRASIL!!!");
         }else{
             Imagem.getFotoPolitico(politico,foto);
+            partido.setText(politico.getString("siglaPartido")+"-"+politico.getString("uf"));
         }
         switch (categoriaSelecionada){
             case 0:
@@ -726,12 +736,16 @@ public class MainActivity extends Activity
         meuPolitico = politico;
         txtPeso.setText(peso);
         txtPoliticoNome.setText(politico.getString("nome"));
+        txtPartido.setText(politico.getString("siglaPartido")+"-"+politico.getString("uf"));
 
         String[] array_list_title = new String[3];
         if(politico.getString("nome").equals("Super Cidadão")){
             array_list_title[0]="Faltas: NENHUMA";
             array_list_title[1]="Gastos Total: R$ 0,00";
             array_list_title[2]="Avaliação: 5";
+            txtPartido.setText("BRASIL!!!");
+            Drawable imagem = ContextCompat.getDrawable(this,R.drawable.ic_launcher);
+            fotoPolitico.setImageDrawable(imagem);
         }else{
             Imagem.getFotoPolitico(politico,fotoPolitico);
             array_list_title[0]=String.format(Locale.getDefault(),"Faltas: %d",politico.getNumber("faltas").intValue());

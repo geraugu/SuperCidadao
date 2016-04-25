@@ -18,7 +18,10 @@
             android:id="@+id/fichaPeso"
             android:layout_marginLeft="4dp"
             android:layout_marginTop="4dp"
-            android:textColor="@android:color/black" />
+            android:textColor="@android:color/holo_orange_light"
+            android:textSize="24dp"
+            android:textStyle="bold"
+            android:textIsSelectable="false" />
 
         <ImageView
             android:layout_width="wrap_content"
@@ -42,11 +45,22 @@
             android:layout_centerHorizontal="true"
             android:textColor="@android:color/background_light"
             android:textAlignment="center" />
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Medium Text"
+            android:id="@+id/fichaPartido"
+            android:layout_below="@+id/fichaNomePolitico"
+            android:layout_centerHorizontal="true"
+            android:textColor="@android:color/background_light"
+            android:textAlignment="center"
+            android:textSize="12dp" />
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@+id/fichaNomePolitico"
+            android:layout_below="@+id/fichaPartido"
             android:layout_centerHorizontal="true"
             android:layout_margin="16dp">
 
@@ -63,7 +77,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="R$0,000"
-                android:id="@+id/fichaGastos"
+                android:id="@+id/fichaValorCategoria"
                 android:layout_centerVertical="true"
                 android:layout_centerHorizontal="true"
                 android:textSize="16dp" />
