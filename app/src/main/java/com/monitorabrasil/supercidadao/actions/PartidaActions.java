@@ -246,5 +246,9 @@ public class PartidaActions {
     }
 
 
-
+    public void somaPontos() {
+        ParseUser parseUser = ParseUser.getCurrentUser();
+        parseUser.increment("pontos",10);
+        parseUser.saveInBackground();
+    }
 }

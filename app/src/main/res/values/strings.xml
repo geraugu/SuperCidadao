@@ -34,4 +34,6 @@
     <string name="gastos_total">Gastos total</string>
     <string name="avaliacao_monitora">Avaliação no Monitora Brasil</string>
     <string name="empatou">Empatou ...</string>
+    <string name="fim_partida_perdeu">Fim de partida! Vc Perdeu :( !</string>
+    <string name="fim_partida_ganhou">Fim de partida! Parabéns, vc ganhou 10 pontos!!!</string>
 </resources>

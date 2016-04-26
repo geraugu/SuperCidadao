@@ -208,20 +208,29 @@ public class MainActivity extends Activity
                 atualizaCartas();
             }
         });
-
-
-
     }
 
     private void fimDePartida() {
         //verificar quem ganhou
         if (cartas1.size() == 0) {
             //jogador 2 ganhou
-
+            resultado.setText(getString(R.string.fim_partida_perdeu));
         } else {
             //jogador 1 ganhou
+            resultado.setText(getString(R.string.fim_partida_ganhou));
+
+            //TODO somar 10 pontos para o usuario
+            partidaActions.somaPontos();
 
         }
+        new PuffInAnimation(resultado).animate();
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                new PuffOutAnimation(resultado).animate();
+            }
+        }, 20000);
         txtStatus.setText("Fim de jogo");
         partida = null;
         cartas2.clear();
